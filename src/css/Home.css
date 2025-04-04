@@ -1,0 +1,136 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #fff;
+}
+
+.home-page {
+  position: relative;
+  min-height: 100vh;
+  background: url('../assets/backgroundImage.png') no-repeat center center/cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 5%;
+}
+
+.home-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+}
+
+.home-card-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.hero-section {
+  padding: 80px 0 50px;
+  text-align: center;
+}
+
+.hero-section h1 {
+  font-size: 4rem;
+  text-shadow: 0 0 20px #ff7e5f;
+}
+
+.hero-section .lead {
+  font-size: 1.5rem;
+  color: #ccc;
+}
+
+.tagline {
+  font-size: 1.8rem;
+  color: #ffc107;
+}
+
+.card-container {
+  padding: 50px 20px;
+}
+
+.feature-card {
+  /* background: rgba(255, 255, 255, 0.1); */
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 20px;
+  transition: transform 0.5s, box-shadow 0.5s;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+  padding: 50px 30px;
+}
+
+.feature-card:hover {
+  transform: rotateY(10deg) translateY(-10px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.neon-card {
+  box-shadow: 0 0 20px #ff7e5f, 0 0 40px #feb47b;
+}
+
+.neon-icon {
+  font-size: 5rem;
+  color: #ffc107;
+  text-shadow: 0 0 20px #ff7e5f;
+}
+
+.feature-card h5 {
+  font-size: 2rem;
+}
+
+.feature-card p {
+  font-size: 1rem;
+  margin: 15px 0;
+}
+
+.btn-glow {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  transition: all 0.4s ease;
+  text-decoration: none;
+  border-radius: 50px;
+  box-shadow: 0 0 15px #ff7e5f;
+}
+
+.btn-glow:hover {
+  background: linear-gradient(135deg, #feb47b, #ff7e5f);
+  transform: scale(1.1);
+  box-shadow: 0 0 25px #ff7e5f;
+}
+
+@media (max-width: 768px) {
+  .hero-section h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-section .lead {
+    font-size: 1.2rem;
+  }
+
+  .feature-card {
+    padding: 30px 20px;
+  }
+
+  .neon-icon {
+    font-size: 3rem;
+  }
+}

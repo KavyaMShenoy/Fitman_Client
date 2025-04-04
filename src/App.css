@@ -1,0 +1,128 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+}
+
+.text-center h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.text-center p {
+  font-size: 1.4rem;
+  color: #555;
+}
+
+.text-center h3 {
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  border: none;
+  padding: 12px 25px;
+  font-size: 1.2rem;
+  transition: 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-3px);
+}
+
+.card {
+  border-radius: 12px;
+  transition: 0.3s;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.card-body h5 {
+  font-size: 1.3rem;
+  color: #444;
+}
+
+.card-body h3 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.card-body:nth-child(1) h3 {
+  color: #e74c3c;
+}
+
+.card-body:nth-child(2) h3 {
+  color: #f39c12;
+}
+
+.card-body:nth-child(3) h3 {
+  color: #28a745;
+}
+
+.card-body:nth-child(4) h3 {
+  color: #9b59b6;
+}
+
+.list-group-item {
+  background: #f8f9fa;
+  border: none;
+  padding: 15px;
+  transition: 0.3s;
+}
+
+.list-group-item:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.list-group-item strong {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.list-group-item:hover strong {
+  color: #0056b3;
+}
+
+.card-body canvas {
+  border-radius: 8px;
+  background: #f0f8ff;
+  padding: 15px;
+  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .text-center h1 {
+    font-size: 2.5rem;
+  }
+
+  .text-center p {
+    font-size: 1.2rem;
+  }
+
+  .btn-primary {
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
+
+  .card-body h3 {
+    font-size: 1.8rem;
+  }
+
+  .list-group-item {
+    padding: 10px;
+  }
+}
