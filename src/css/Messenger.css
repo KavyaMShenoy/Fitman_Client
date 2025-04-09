@@ -1,0 +1,29 @@
+.chat-style {
+        max-width: 80%;
+        border-radius: 1.5rem;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        word-break: break-word;
+        white-space: pre-wrap;
+}
+
+@keyframes fade-in-out {
+    0% {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+}

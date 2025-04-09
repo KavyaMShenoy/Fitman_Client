@@ -1,0 +1,132 @@
+.appointment-page {
+    position: relative;
+    min-height: 100vh;
+    background: url('../assets/backgroundImage.png') no-repeat center center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.appointment-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 0;
+}
+
+.appointment-card-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.react-datepicker-wrapper,
+.react-datepicker__input-container,
+.form-control {
+    width: 100% !important;
+}
+
+.appointment-section-container {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 30px auto;
+    max-width: 1200px;
+}
+
+.appointment-section-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.appointment-section-title {
+    font-size: 2rem;
+    color: #007bff;
+    font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-heading {
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 1.8rem;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.scrollable-section {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.scrollable-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollable-section::-webkit-scrollbar-thumb {
+    background-color: #fff;
+    border-radius: 6px;
+}
+
+.glow-button {
+    background-color: #0dcaf0;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: bold;
+    box-shadow: 0 0 12px rgba(13, 202, 240, 0.6), 0 0 25px rgba(13, 202, 240, 0.8);
+    animation: pulseGlow 2s infinite ease-in-out;
+    transition: all 0.3s ease-in-out;
+}
+
+.glow-button:hover {
+    transform: scale(1.05);
+    background-color: #0bbbe6;
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 8px rgba(13, 202, 240, 0.5), 0 0 15px rgba(13, 202, 240, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 18px rgba(13, 202, 240, 0.9), 0 0 30px rgba(13, 202, 240, 1);
+    }
+
+    100% {
+        box-shadow: 0 0 8px rgba(13, 202, 240, 0.5), 0 0 15px rgba(13, 202, 240, 0.6);
+    }
+}
+
+@media (max-width: 768px) {
+    .appointment-section-title {
+        font-size: 1.5rem;
+    }
+
+    .section-heading {
+        font-size: 1.4rem;
+    }
+
+    .glow-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}

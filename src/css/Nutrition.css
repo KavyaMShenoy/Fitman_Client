@@ -5,7 +5,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-left: 5%;
+    padding: 1em;
 }
 
 .nutrition-overlay {
@@ -23,3 +23,25 @@
     z-index: 1;
     width: 100%;
 }
+
+.no-resize-scroll {
+    resize: none;
+    overflow-y: auto;
+    height: 197px;
+}
+
+.transparent-table {
+    background-color: transparent !important;
+  }
+  
+  .transparent-table thead,
+  .transparent-table tbody,
+  .transparent-table tr,
+  .transparent-table th,
+  .transparent-table td {
+    background-color: transparent !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff !important;
+  }
+  

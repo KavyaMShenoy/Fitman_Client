@@ -7,6 +7,8 @@ import axiosInstance from '../utils/auth';
 
 import { Navbar, Nav, Container, Form, Button, Alert, Card } from 'react-bootstrap';
 
+import logo from '../assets/logo.png';
+
 import '../css/Login.css';
 
 const Login = () => {
@@ -43,7 +45,11 @@ const Login = () => {
         <>
             <Navbar bg="dark" variant="dark" expand="lg" className="sticky-top">
                 <Container>
-                    <Navbar.Brand as={Link} to="/">Fitman</Navbar.Brand>
+                    <Navbar.Brand><img
+                        src={logo}
+                        alt="FitMan Logo"
+                        style={{ width: '50px', height: '50px', marginRight: '10px' }}
+                    />Fitman</Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ms-auto">
@@ -60,7 +66,7 @@ const Login = () => {
                 </Container>
             </Navbar>
 
-            <div className="login-page">
+            <div className="login-page"> 
                 <div className="login-overlay"></div>
 
                 <div className="login-card-wrapper">
@@ -79,7 +85,11 @@ const Login = () => {
                                         type="email"
                                         placeholder="Enter your email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={(e) => {
+                                            setEmail(e.target.value);
+                                            setError("");
+                                        }
+                                        }
                                         required
                                     />
                                 </Form.Group>
@@ -90,7 +100,11 @@ const Login = () => {
                                         type="password"
                                         placeholder="Enter your password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            setError("");
+                                        }
+                                        }
                                         required
                                     />
                                 </Form.Group>
@@ -113,12 +127,6 @@ const Login = () => {
                                     </Alert>
                                 )}
                             </Form>
-
-                            {/* <div className="text-center mt-3">
-                                <Link to="/register" className="text-light text-decoration-none">
-                                    Not registered yet? <strong>Register now</strong>
-                                </Link>
-                            </div> */}
                         </Card.Body>
                     </Card>
                 </div>

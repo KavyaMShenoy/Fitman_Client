@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
-
 import { FaDumbbell, FaUserPlus } from "react-icons/fa";
+
 import "../css/Home.css";
+
+import { useContext } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 
 import eventEmitter from "../utils/eventEmitter";
 
 const Home = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [userName, setUserName] = useState("User");
+
+  const { fullName: userName } = useContext(AuthContext);
 
   useEffect(() => {
     const handleLogout = () => {
@@ -17,11 +21,7 @@ const Home = () => {
     };
 
     eventEmitter.on("logout", handleLogout);
-
-    if (isLoggedIn) {
-      setUserName(localStorage.getItem("userName") || "John Doe");
-    }
-
+    
     return () => {
       eventEmitter.off("logout", handleLogout);
     };
@@ -67,7 +67,7 @@ const Home = () => {
                       <FaUserPlus className="icon neon-icon" />
                       <Card.Title className="fw-bold">User</Card.Title>
                       <Card.Text>
-                        Track your workouts, set goals, and manage your nutrition.
+                        Track your workouts, set goals, and track and manage your nutrition.
                       </Card.Text>
                       <Link to="/register-user" className="btn btn-glow mt-3">
                         Register as User

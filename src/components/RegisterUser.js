@@ -6,6 +6,8 @@ import { FaHome } from "react-icons/fa";
 import InfoTooltip from "./InfoTooltip";
 import { FaUserCircle } from "react-icons/fa";
 
+import logo from '../assets/logo.png';
+
 import '../css/RegisterUser.css';
 
 const RegisterUser = () => {
@@ -33,7 +35,7 @@ const RegisterUser = () => {
         fitnessGoal: '',
         dailyCalorieGoal: '',
         dailyWaterGoal: '',
-        trainerId: '',
+        trainerId: null,
         phone: '',
         profilePic: '',
         address: {
@@ -98,6 +100,7 @@ const RegisterUser = () => {
         }
 
         setSelectedTrainer(trainer);
+        console.log(trainer._id)
         setForm((prev) => ({ ...prev, trainerId: trainer._id }));
         setError('');
         // setStep(3);
@@ -168,7 +171,11 @@ const RegisterUser = () => {
         <>
             <Navbar bg="dark" variant="dark" expand="lg" className="sticky-top">
                 <Container>
-                    <Navbar.Brand>Fitman</Navbar.Brand>
+                    <Navbar.Brand><img
+                        src={logo}
+                        alt="FitMan Logo"
+                        style={{ width: '50px', height: '50px', marginRight: '10px' }}
+                    />Fitman</Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ms-auto">
@@ -320,7 +327,7 @@ const RegisterUser = () => {
                                         <Form.Group className="mb-3">
                                             <Form.Label>Gender</Form.Label>
                                             <Form.Select name="gender" value={form.gender} onChange={handleChange} required>
-                                                <option value="">Select your gender</option>
+                                                <option value="" disabled>Select your gender</option>
                                                 <option value="male">Male</option>
                                                 <option value="female">Female</option>
                                                 <option value="other">Other</option>
@@ -340,7 +347,7 @@ const RegisterUser = () => {
                                                         onChange={(e) => {
                                                             const input = e.target.value;
 
-                                                            if (/^\d*\.?\d*$/.test(input) && Number(input) >= 30 && Number(input) <= 500) {
+                                                            if (/^\d*\.?\d*$/.test(input) && Number(input) >= 0 && Number(input) <= 500) {
                                                                 handleChange(e);
                                                             }
                                                         }}
@@ -366,7 +373,7 @@ const RegisterUser = () => {
                                                         onChange={(e) => {
                                                             const input = e.target.value;
 
-                                                            if (/^\d*$/.test(input) && Number(input) >= 50 && Number(input) <= 250) {
+                                                            if (/^\d*$/.test(input) && Number(input) >= 0 && Number(input) <= 250) {
                                                                 handleChange(e);
                                                             }
                                                         }}
@@ -382,11 +389,10 @@ const RegisterUser = () => {
                                             </Col>
                                         </Row>
 
-
                                         <Form.Group className="mb-3">
                                             <Form.Label>Fitness Goal</Form.Label>
                                             <Form.Select name="fitnessGoal" value={form.fitnessGoal} onChange={handleChange} required>
-                                                <option value="">Select your goal</option>
+                                                <option value="" disabled>Select your goal</option>
                                                 <option value="weight loss">Weight Loss</option>
                                                 <option value="muscle gain">Muscle Gain</option>
                                                 <option value="endurance">Endurance</option>
@@ -412,12 +418,12 @@ const RegisterUser = () => {
                                                 min="0"
                                                 max="2200"
                                                 step="1"
+                                                required
                                             />
                                             {form.dailyCalorieGoal && (form.dailyCalorieGoal < 0 || form.dailyCalorieGoal > 2200) && (
                                                 <small className="text-danger">Daily Calorie Goal must be between 0 and 2200.</small>
                                             )}
                                         </Form.Group>
-
 
                                         <Form.Group className="mb-3">
                                             <Form.Label>Daily Water Goal (glasses)</Form.Label>
@@ -437,12 +443,12 @@ const RegisterUser = () => {
                                                 min="0"
                                                 max="8"
                                                 step="1"
+                                                required
                                             />
                                             {form.dailyWaterGoal && (form.dailyWaterGoal < 0 || form.dailyWaterGoal > 8) && (
                                                 <small className="text-danger">Daily Water Goal must be between 0 and 8 glasses.</small>
                                             )}
                                         </Form.Group>
-
 
                                         <Card className="mb-4">
                                             <Card.Body>
@@ -563,7 +569,7 @@ const RegisterUser = () => {
                                         <h4 className="text-center mb-4">Choose a Trainer</h4>
                                         <Row>
                                             {trainers.map((trainer) => (
-                                                (trainer.specialization === form.fitnessGoal) ? (<Col md={6} key={trainer._id} className="mb-3">
+                                                (trainer.specialization.includes(form.fitnessGoal)) ? (<Col md={6} key={trainer._id} className="mb-3">
                                                     <Card
                                                         className={`trainer-card ${form.trainerId === trainer._id ? "border-primary" : ""}`}
                                                         onClick={() => handleSelectTrainer(trainer)}
@@ -626,14 +632,18 @@ const RegisterUser = () => {
                                                         onClick={() => setSelectedPackage(pkg.id)}
                                                     >
                                                         <Card.Body>
-                                                            <h3>{pkg.label}</h3>
+                                                            <h4>{pkg.label}</h4>
                                                             <p><strong>Price:</strong> ₹{pkg.price}</p>
                                                         </Card.Body>
                                                     </Card>
                                                 </Col>
                                             ))}
 
-                                            <Col md={12}>
+                                            <Col md={3}>
+                                                <Button className="w-100 mt-3" variant="secondary" onClick={prevStep}>Back</Button>
+                                            </Col>
+
+                                            <Col md={9}>
                                                 <Button className="w-100 mt-3" type="submit" disabled={loading}>
                                                     {loading ? "Registering..." : `Pay ₹${packages.find(p => p.id === selectedPackage).price} & Register`}
                                                 </Button>

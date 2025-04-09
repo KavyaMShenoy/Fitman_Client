@@ -1,31 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from "jwt-decode";
+
 import axiosInstance from "../utils/auth";
 import eventEmitter from "../utils/eventEmitter";
 
-import { Row, Col, Card, Form, Button, Spinner, ListGroup, ProgressBar, Alert, Badge, Toast, ToastContainer } from "react-bootstrap";
+import { Row, Col, Card, Table, Form, Button, Spinner, ListGroup, ProgressBar, Badge, Modal } from "react-bootstrap";
 
 import NutritionChart from "./NutritionChart";
-// import Messenger from "./Messenger";
+import NutritionTimeline from "./NutritionTimeline";
+
+import { BsChatDotsFill } from 'react-icons/bs';
+import { FaAppleAlt } from 'react-icons/fa';
 
 import '../css/Nutrition.css';
 
+import { useContext } from "react";
+import { AuthContext } from "../contexts/AuthContext";
+import { useToast } from "../contexts/GlobalToastContext";
+
 const Nutrition = () => {
   const navigate = useNavigate();
+
+  const { userId, trainerId } = useContext(AuthContext);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState("");
   const [userData, setUserData] = useState(null);
   const [meals, setMeals] = useState([]);
+  const [timelineData, setTimelineData] = useState([]);
   const [waterIntake, setWaterIntake] = useState(0);
-  const [showToast, setShowToast] = useState({ show: false, message: "", variant: "" });
   const [totalMacros, setTotalMacros] = useState({ protein: 0, carbs: 0, fats: 0, calories: 0 });
   const [dailyCalorieGoal, setDailyCalorieGoal] = useState(0);
+  const { showToastNotification } = useToast();
   const [dailyWaterGoal, setDailyWaterGoal] = useState(0);
   const [lastSavedIntake, setLastSavedIntake] = useState(0);
 
   const [form, setForm] = useState({
-    mealType: "breakfast",
+    mealType: "",
     foodName: "",
     calories: "",
     protein: "",
@@ -37,6 +47,35 @@ const Nutrition = () => {
 
   const [disabledMealTypes, setDisabledMealTypes] = useState([]);
 
+  const mealTypeColors = {
+    breakfast: "warning",
+    lunch: "success",
+    dinner: "primary",
+    snack: "secondary"
+  };
+
+  const calculateMealCalories = (protein = 0, carbs = 0, fats = 0, fiber = 0) => {
+    const proteinCalories = protein * 4;
+    const carbsCalories = carbs * 4;
+    const fatsCalories = fats * 9;
+    const fiberCalories = fiber * 2;
+
+    const totalCalories = proteinCalories + carbsCalories + fatsCalories + fiberCalories;
+
+    return Math.round(totalCalories);
+};
+
+useEffect(() => {
+  const { protein, carbs, fats, fiber } = form;
+  if (protein !== null && carbs !== null && fats !== null && fiber !== null) {
+    const calories = calculateMealCalories(protein, carbs, fats, fiber);
+    setForm((prev) => ({
+      ...prev,
+      calories,
+    }));
+  }
+}, [form.protein, form.carbs, form.fats, form.fiber]);
+
   const calculateTotalMacros = (meals) => {
     return meals.reduce((acc, meal) => ({
       protein: acc.protein + meal.protein,
@@ -46,61 +85,97 @@ const Nutrition = () => {
     }), { protein: 0, carbs: 0, fats: 0, calories: 0 });
   };
 
-  useEffect(() => {
-    const fetchUserId = () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          showToastNotification("❌ Token missing.", "danger");
-          navigate("/login");
-          return;
-        }
-        const decodedToken = jwtDecode(token);
-        setUserId(decodedToken.userId);
-      } catch (error) {
-        showToastNotification(`❌ Invalid token or decoding failed: ${error.message}`, "danger");
-        navigate("/login");
-      }
-    };
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [fullDesc, setFullDesc] = useState("");
 
-    fetchUserId();
-  }, [navigate]);
+  const handleShowFullDescription = (desc) => {
+    setFullDesc(desc);
+    setShowDescModal(true);
+  };
+
+  const handleCloseDescModal = () => {
+    setShowDescModal(false);
+    setFullDesc("");
+  };
+
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [trainerComment, setTrainerComment] = useState("");
+
+  const handleShowTrainerComment = (comment) => {
+    setTrainerComment(comment);
+    setShowCommentModal(true);
+  };
+
+  const handleCloseTrainerComment = () => {
+    setShowCommentModal(false);
+    setTrainerComment("");
+  };
 
   useEffect(() => {
     if (!userId) return;
 
+    const getLocalDateString = (isoDate) => {
+      const date = new Date(isoDate);
+      return date.toLocaleDateString('en-CA');
+    };
+
     const fetchUserData = async () => {
       try {
-        const userResponse = await axiosInstance.get(`/auth/profile/${userId}`);
-        setUserData(userResponse?.data?.user);
-        setDailyCalorieGoal(userResponse?.data?.user?.dailyCalorieGoal);
-        setDailyWaterGoal(userResponse?.data?.user?.dailyWaterGoal);
-        console.log(userResponse?.data?.user)
+        const { data } = await axiosInstance.get(`/auth/profile/${userId}`);
+        const user = data?.user;
+        setUserData(user);
+        setDailyCalorieGoal(user?.dailyCalorieGoal);
+        setDailyWaterGoal(user?.dailyWaterGoal);
+        console.log(user);
       } catch (error) {
-        showToastNotification(`❌  Failed to load user data: , ${error.message}`, "danger");
+        showToastNotification("Failed to load user data.", "danger");
       }
     };
 
     const fetchNutrition = async () => {
       try {
-        const nutritionResponse = await axiosInstance.get("/nutrition");
-        const nutritionData = nutritionResponse.data.nutritionEntries[0];
-        console.log(nutritionResponse)
-        setMeals(nutritionData.meals || []);
-        setWaterIntake(nutritionData.waterIntake || 0);
-        setLastSavedIntake(nutritionData.waterIntake || 0)
-        setTotalMacros(calculateTotalMacros(nutritionData.meals));
+        const { data } = await axiosInstance.get("/nutrition/today");
+        const todayNutritionData = data?.nutritionEntry;
+        console.log(data);
 
-        const existingMealTypes = nutritionData.meals.map(meal => meal.mealType);
-        setDisabledMealTypes(existingMealTypes);
+        const mealEntries = todayNutritionData?.mealEntries || [];
+        const water = todayNutritionData?.waterIntake || 0;
+
+        setMeals(mealEntries);
+        setWaterIntake(water);
+        setLastSavedIntake(water);
+
+        setDisabledMealTypes(mealEntries.map(meal => meal.mealType));
+        setTotalMacros(calculateTotalMacros(mealEntries));
       } catch (error) {
-        showToastNotification(`❌ Failed to load nutrition data: ${error.message}`, "danger");
+        showToastNotification("Error fetching nutrition data.", "danger");
+      }
+    };
+
+    const fetchAllNutritionData = async () => {
+      try {
+        const { data } = await axiosInstance.get("/nutrition/all");
+        if (data?.success) {
+          const today = getLocalDateString(new Date());
+
+          const filteredEntries = (data.nutritionEntries || []).filter(entry => {
+            return getLocalDateString(entry.date) !== today;
+          });
+
+          setTimelineData(filteredEntries);
+        }
+      } catch (error) {
+        console.error("Failed to fetch nutrition data", error);
       }
     };
 
     const fetchData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchUserData(), fetchNutrition()]);
+      await Promise.all([
+        fetchUserData(),
+        fetchNutrition(),
+        fetchAllNutritionData()
+      ]);
       setIsLoading(false);
     };
 
@@ -114,28 +189,23 @@ const Nutrition = () => {
     };
   }, [userId, navigate]);
 
+
   useEffect(() => {
     setTotalMacros(calculateTotalMacros(meals));
   }, [meals]);
 
-  const showToastNotification = (message, variant) => {
-    setShowToast({ show: true, message, variant });
-  };
-
-  useEffect(() => {
-    if (showToast.show) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [showToast]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    const numericFields = ["protein", "carbs", "fats", "fiber"];
+    setForm((prev) => ({
+      ...prev,
+      [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value,
+    }));
   };
 
   const resetForm = () => {
     setForm({
-      mealType: "breakfast",
+      mealType: "",
       foodName: "",
       calories: "",
       protein: "",
@@ -146,59 +216,67 @@ const Nutrition = () => {
     });
   };
 
-  const addMeal = async (e) => {
+  const saveMeal = async (e) => {
     e.preventDefault();
 
+    if (!isValidForm()) {
+      showToastNotification("Please fill all fields with valid values.", "warning");
+      return;
+    }
+
     const newMeal = {
-      ...form,
+      mealType: form.mealType,
+      foodName: form.foodName.trim(),
       calories: parseFloat(form.calories) || 0,
       protein: parseFloat(form.protein) || 0,
       carbs: parseFloat(form.carbs) || 0,
       fiber: parseFloat(form.fiber) || 0,
-      fats: parseFloat(form.fats) || 0
+      fats: parseFloat(form.fats) || 0,
+      description: form.description?.trim() || ""
     };
 
     try {
-      const nutritionResponse = await axiosInstance.get("/nutrition");
-      const nutritionData = nutritionResponse.data.nutritionEntries[0];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      const cleanedMeals = nutritionData?.meals.map(({ _id, ...meal }) => meal) || [];
-
-      const updatedMeals = [...cleanedMeals, newMeal];
-
-      await axiosInstance.post("/nutrition/addNutrition", {
+      const payload = {
         userId,
-        trainerId: userData?.trainerId?._id,
-        meals: updatedMeals
-      });
+        trainerId: trainerId,
+        date: today.toISOString(),
+        meal: newMeal
+      };
 
-      const updatedResponse = await axiosInstance.get("/nutrition");
-      const updatedNutritionData = updatedResponse.data.nutritionEntries[0];
+      await axiosInstance.post("/nutrition/addNutrition", payload);
 
-      setMeals(updatedNutritionData.meals || []);
+      const { data } = await axiosInstance.get("/nutrition/today");
+      console.log(data, 123)
 
-      setTotalMacros(calculateTotalMacros(updatedMeals));
+      setMeals(data?.nutritionEntry?.mealEntries || []);
+      setTotalMacros(calculateTotalMacros(data?.nutritionEntry?.mealEntries || []));
 
-      const existingMealTypes = updatedNutritionData.meals.map(meal => meal.mealType);
-      setDisabledMealTypes(existingMealTypes);
+      const existingMealTypes = data.nutritionEntry?.mealEntries?.map(meal => meal.mealType);
+      setDisabledMealTypes(existingMealTypes || []);
 
-      showToastNotification("✅ Meal saved successfully!", "success");
-
+      showToastNotification("Meal saved successfully!", "success");
+      resetForm();
     } catch (error) {
-      showToastNotification(`❌ Failed to save meal: ${error.message}`, "danger");
+      showToastNotification("Failed to save meal.", "danger");
     }
-
-    resetForm();
   };
 
   const saveWaterIntake = async () => {
     try {
-      await axiosInstance.patch("/nutrition/updateWaterIntake", { userId, waterIntake });
-      showToastNotification("✅ Water intake saved successfully!", "success");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const date = today.toISOString();
+
+      await axiosInstance.patch("/nutrition/updateWaterIntake", { date, waterIntake });
+
+      showToastNotification("Water intake saved successfully!", "success");
+      setLastSavedIntake(waterIntake);
     } catch (error) {
-      showToastNotification(`❌ Failed to save water intake: ${error.message}`, "danger");
+      showToastNotification("Failed to save water intake.", "danger");
     }
-    setLastSavedIntake(waterIntake);
   };
 
   const generateNutritionRecommendations = () => {
@@ -247,7 +325,18 @@ const Nutrition = () => {
     return recommendations;
   };
 
-  const isMealFormValid = form.foodName && form.calories;
+  const isValidForm = () => {
+    const { foodName, calories, protein, carbs, fiber, fats, description } = form;
+    return (
+      foodName.trim() && foodName.length >= 3 && foodName.length <= 300 &&
+      calories >= 1 && calories <= 5000 &&
+      protein >= 1 && protein <= 500 &&
+      carbs >= 1 && carbs <= 1000 &&
+      fiber >= 1 && fiber <= 100 &&
+      fats >= 1 && fats <= 300 &&
+      description >= 500
+    );
+  };
 
   return (
     <div className="py-5 nutrition-page">
@@ -258,7 +347,7 @@ const Nutrition = () => {
         <Row className="text-center mb-5 justify-content-center">
           <Col md={10}>
             <h1 className="display-4 fw-bold text-success">🥗 Nutrition Dashboard</h1>
-            <p className="lead text-light">"Fuel your body with the right nutrition!" 🍎</p>
+            <p className="lead text-light">"Fuel your body with the right nutrition!" <FaAppleAlt size={28} color="#e11d48" /> </p>
           </Col>
         </Row>
 
@@ -270,12 +359,12 @@ const Nutrition = () => {
           (<>
             <Row className="g-4 justify-content-center">
               <Col md={10}>
-                <Card className="shadow-lg rounded-3 border-0 p-4 bg-dark bg-opacity-75 text-light">
+                <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff" }}>
                   <Card.Body>
-                    <h4>🥗 Personalized Nutrition Recommendations</h4>
+                    <h4 className="mb-3">🥗 Personalized Nutrition Recommendations</h4>
                     {userData ? (
                       <>
-                        <p><strong>Goal:</strong> {userData.fitnessGoal}</p>
+                        <p><strong>Goal:</strong> <span className="text-titlecase">{userData.fitnessGoal}</span></p>
                         <p><strong>BMI:</strong> {userData.BMI}</p>
                         <p><strong>Daily Calorie Goal:</strong> {userData.dailyCalorieGoal} kcal</p>
                         <p><strong>Daily Water Goal:</strong> {userData.dailyWaterGoal} glasses</p>
@@ -298,52 +387,73 @@ const Nutrition = () => {
 
             <Row className="g-4 justify-content-center mt-3">
               <Col md={5}>
-                <Card className="shadow-lg rounded-3 border-0 p-4 bg-dark bg-opacity-75 text-light">
+                <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff",height: "792px", maxHeight: "792px", overflowY: "auto", overflowX: "hidden" }}>
                   <Card.Body>
-                    <h4 className="mb-4">🍽️ Meal Log</h4>
+                    <h4 className="mb-5">🍽️ Meal Log</h4>
 
-                    <Form onSubmit={addMeal}>
-                      <Row className="g-3">
-                        <Col md={6}>
-                          <Form.Group>
-                            <Form.Label>Meal Type</Form.Label>
-                            <Form.Select
-                              name="mealType"
-                              value={form.mealType}
-                              onChange={handleChange}
-                              required
-                            >
-                              {["breakfast", "lunch", "dinner", "snack"].map(type => (
-                                <option key={type} value={type} disabled={disabledMealTypes.includes(type)}>
-                                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          </Form.Group>
+                    <Form onSubmit={saveMeal}>
+                      <Row className="g-5">
+                        <Col md={12}>
+                          <Form.Control
+                            type="text"
+                            placeholder="Food Name"
+                            name="foodName"
+                            value={form.foodName}
+                            onChange={handleChange}
+                            minLength="3"
+                            maxLength="100"
+                            required
+                          />
                         </Col>
 
                         <Col md={6}>
-                          <Form.Group>
-                            <Form.Label>Food Name</Form.Label>
-                            <Form.Control
-                              type="text"
-                              placeholder="Food Name"
-                              name="foodName"
-                              value={form.foodName}
-                              onChange={handleChange}
-                              required
-                            />
-                          </Form.Group>
+                          <Form.Select
+                            name="mealType"
+                            value={form.mealType}
+                            onChange={handleChange}
+                            required
+                          >
+                            <option value="" disabled>Select Meal Type</option>
+                            {Object.keys(mealTypeColors).map((type) => (
+                              <option key={type} value={type} disabled={disabledMealTypes.includes(type)}>
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </option>
+                            ))}
+                          </Form.Select>
                         </Col>
 
                         <Col md={6}>
                           <Form.Control
                             type="number"
-                            placeholder="Calories"
                             name="calories"
+                            placeholder="Calories"
                             value={form.calories}
+                            readOnly
+                          />
+                        </Col>
+
+                        <Col md={6}>
+                          <Form.Control
+                            type="number"
+                            placeholder="Protein (g)"
+                            name="protein"
+                            value={form.protein}
                             onChange={handleChange}
-                            min="1"
+                            min="0"
+                            max="500"
+                            required
+                          />
+                        </Col>
+
+                        <Col md={6}>
+                          <Form.Control
+                            type="number"
+                            placeholder="Carbs (g)"
+                            name="carbs"
+                            value={form.carbs}
+                            onChange={handleChange}
+                            min="0"
+                            max="1000"
                             required
                           />
                         </Col>
@@ -356,32 +466,12 @@ const Nutrition = () => {
                             value={form.fiber}
                             onChange={handleChange}
                             min="0"
+                            max="100"
+                            required
                           />
                         </Col>
 
-                        <Col md={4}>
-                          <Form.Control
-                            type="number"
-                            placeholder="Protein (g)"
-                            name="protein"
-                            value={form.protein}
-                            onChange={handleChange}
-                            min="0"
-                          />
-                        </Col>
-
-                        <Col md={4}>
-                          <Form.Control
-                            type="number"
-                            placeholder="Carbs (g)"
-                            name="carbs"
-                            value={form.carbs}
-                            onChange={handleChange}
-                            min="0"
-                          />
-                        </Col>
-
-                        <Col md={4}>
+                        <Col md={6}>
                           <Form.Control
                             type="number"
                             placeholder="Fats (g)"
@@ -389,55 +479,38 @@ const Nutrition = () => {
                             value={form.fats}
                             onChange={handleChange}
                             min="0"
+                            max="300"
+                            required
                           />
                         </Col>
 
                         <Col md={12}>
                           <Form.Control
-                            type="textarea"
+                            as="textarea"
                             placeholder="Description"
                             name="description"
                             value={form.description}
                             onChange={handleChange}
-                            maxLength="300"
+                            maxLength="500"
+                            className="rounded-3 p-2 no-resize-scroll"
                           />
                         </Col>
 
                         <Col md={12}>
-                          <Button type="submit" variant="success" className="mt-2 w-100" disabled={!isMealFormValid}>
+                          <Button type="submit" variant="success" className="mt-2 w-100">
                             Save Meal
                           </Button>
                         </Col>
                       </Row>
                     </Form>
-
-                    <div className="mt-4" style={{ height: "250px", maxHeight: "250px", overflow: "auto" }}>
-                      <ListGroup>
-                        {meals.length > 0 ? (
-                          meals.map((meal) => (
-                            <ListGroup.Item key={meal._id}>
-                              <strong>{meal.foodName}</strong>
-                              <Badge bg="info" className="ms-2">{meal.mealType}</Badge>
-                              <div>Calories: {meal.calories} kcal</div>
-                              <small className="text-muted">
-                                Protein: {meal.protein}g, Carbs: {meal.carbs}g, Fiber: {meal.fiber}g, Fats: {meal.fats}g
-                              </small>
-                              {meal.description && <div>Description: {meal.description}</div>}
-                            </ListGroup.Item>
-                          ))
-                        ) : (
-                          <Alert variant="info">No meals added yet!</Alert>
-                        )}
-                      </ListGroup>
-                    </div>
                   </Card.Body>
                 </Card>
               </Col>
 
               <Col md={5}>
-                <Card className="shadow-lg rounded-3 border-0 p-4 bg-dark bg-opacity-75 text-light">
+                <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff" }}>
                   <Card.Body className="text-center">
-                    <h4>🔥 Calorie Breakdown</h4>
+                    <h4 className="mb-3">🔥 Calorie Breakdown</h4>
                     <NutritionChart
                       totalMacros={totalMacros}
                       dailyCalorieGoal={dailyCalorieGoal}
@@ -448,9 +521,9 @@ const Nutrition = () => {
                   </Card.Body>
                 </Card>
 
-                <Card className="shadow-lg mt-4">
+                <Card className="mt-4 shadow-lg rounded-3 p-1 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff", height: "260px", maxHeight: "260px", overflowY: "auto", overflowX: "hidden" }}>
                   <Card.Body>
-                    <h4>💧 Water Intake Tracker</h4>
+                    <h4 className="mb-3">💧 Water Intake Tracker</h4>
                     <ProgressBar
                       now={(waterIntake / dailyWaterGoal) * 100}
                       label={`${waterIntake}/${dailyWaterGoal} Glasses`}
@@ -472,7 +545,7 @@ const Nutrition = () => {
                     </div>
                     <Button
                       variant="success"
-                      className="mt-3 w-100"
+                      className="mt-5 w-100"
                       onClick={saveWaterIntake}
                       disabled={waterIntake === lastSavedIntake}
                     >
@@ -483,52 +556,144 @@ const Nutrition = () => {
 
               </Col>
             </Row>
+
+            <Row className="g-4 justify-content-center mt-3">
+              <Col md={10}>
+                <div
+                  className="rounded-4 shadow-sm p-3"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid #fff",
+                  }}
+                >
+                  <h4 className="text-center mb-3 fw-semibold text-light">Today's Meal Log</h4>
+
+                  <Table
+                    bordered
+                    responsive
+                    className="table-sm rounded-4 overflow-hidden m-0 transparent-table"
+                  >
+                    <thead className="text-center text-white">
+                      <tr>
+                        <th>#</th>
+                        <th>Meal Type</th>
+                        <th>Food</th>
+                        <th>Calories</th>
+                        <th>Protein (g)</th>
+                        <th>Carbs (g)</th>
+                        <th>Fats (g)</th>
+                        <th>Fiber (g)</th>
+                        <th>Description</th>
+                        <th>Trainer Comment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {meals && meals.length > 0 ? (
+                        meals.map((meal, index) => (
+                          <tr key={index} className="text-white">
+                            <td className="text-center">{index + 1}</td>
+                            <td className="text-center">
+                              <Badge bg={mealTypeColors[meal.mealType] || "info"} style={{ padding: "5px 10px", fontSize: "0.9rem", lineHeight: "1.4" }}>
+                                {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
+                              </Badge>
+                            </td>
+                            <td>{meal.foodName}</td>
+                            <td>{meal.calories}</td>
+                            <td>{meal.protein}</td>
+                            <td>{meal.carbs}</td>
+                            <td>{meal.fats}</td>
+                            <td>{meal.fiber}</td>
+                            <td style={{ maxWidth: "150px", whiteSpace: "normal", wordWrap: "break-word" }}>
+                              {meal.description ? (
+                                <>
+                                  {meal.description.split(" ").slice(0, 30).join(" ")}
+                                  {meal.description.split(" ").length > 30 && (
+                                    <span
+                                      role="button"
+                                      className="text-primary ms-2 text-decoration-underline"
+                                      onClick={() => handleShowFullDescription(meal.description)}
+                                    >
+                                      Show more
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <em className="text-light">—</em>
+                              )}
+                            </td>
+                            <td>
+                              {meal.trainerComment ? (
+                                <span
+                                  role="button"
+                                  className="text-primary d-flex justify-content-center m-3"
+                                  onClick={() => handleShowTrainerComment(meal.trainerComment)}
+                                  title="View trainer comment"
+                                >
+                                  <BsChatDotsFill size={18} className="text-light" />
+                                </span>
+                              ) : (
+                                <span className="d-flex justify-content-center"><em className="text-light">No comment</em></span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="10" className="text-center text-light">
+                            No meals logged for today.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </div>
+              </Col>
+            </Row>
+
+            <Row className="g-4 justify-content-center mt-3">
+              <Col md={10}>
+                <div className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff" }}>
+                  <h4 className="text-center mb-3 fw-semibold text-light">🕒 Nutrition Timeline History (Last 5 Days)</h4>
+                  {timelineData.length > 0 ? (<NutritionTimeline nutritionEntries={timelineData} />) :
+                    <div className="text-center bg-light text-dark rounded p-5 fw-bold">No timelines.</div>}
+                </div>
+              </Col>
+            </Row>
           </>
           )}
 
-        {showToast.show && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 999
-            }}
-          />
-        )}
+        <Modal show={showDescModal} onHide={handleCloseDescModal} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Meal Description</Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ whiteSpace: "pre-wrap" }}>
+            {fullDesc}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseDescModal}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-        {showToast.show && (
-          <ToastContainer
-            position="middle-center"
-            className="p-3"
-            style={{ zIndex: 1001, position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
-          >
-            <Toast
-              show={showToast.show}
-              bg={showToast.variant}
-              onClose={() => setShowToast({ ...showToast, show: false })}
-              delay={3000}
-              autohide
-            >
-              <Toast.Header>
-                <strong className="me-auto">Notification</strong>
-                <small>Just now</small>
-              </Toast.Header>
-              <Toast.Body>{showToast.message}</Toast.Body>
-            </Toast>
-          </ToastContainer>
-        )}
-
-
-        {/* {userId && userData && (
-        <Messenger
-          trainerId={userData?.trainerId?._id}
-          userId={userId}
-        />
-      )} */}
+        <Modal show={showCommentModal} onHide={handleCloseTrainerComment} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Trainer Comment</Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ whiteSpace: "pre-wrap", fontSize: "0.95rem" }}>
+            {
+              trainerComment.split(" ").slice(0, 300).join(" ") +
+              (trainerComment.split(" ").length > 300 ? "..." : "")
+            }
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseTrainerComment}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
 
     </div>
