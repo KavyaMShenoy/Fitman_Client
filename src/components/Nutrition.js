@@ -45,6 +45,8 @@ const Nutrition = () => {
     description: ""
   });
 
+  const [validationErrors, setValidationErrors] = useState({});
+
   const [disabledMealTypes, setDisabledMealTypes] = useState([]);
 
   const mealTypeColors = {
@@ -63,18 +65,18 @@ const Nutrition = () => {
     const totalCalories = proteinCalories + carbsCalories + fatsCalories + fiberCalories;
 
     return Math.round(totalCalories);
-};
+  };
 
-useEffect(() => {
-  const { protein, carbs, fats, fiber } = form;
-  if (protein !== null && carbs !== null && fats !== null && fiber !== null) {
-    const calories = calculateMealCalories(protein, carbs, fats, fiber);
-    setForm((prev) => ({
-      ...prev,
-      calories,
-    }));
-  }
-}, [form.protein, form.carbs, form.fats, form.fiber]);
+  useEffect(() => {
+    const { protein, carbs, fats, fiber } = form;
+    if (protein !== null && carbs !== null && fats !== null && fiber !== null) {
+      const calories = calculateMealCalories(protein, carbs, fats, fiber);
+      setForm((prev) => ({
+        ...prev,
+        calories,
+      }));
+    }
+  }, [form.protein, form.carbs, form.fats, form.fiber]);
 
   const calculateTotalMacros = (meals) => {
     return meals.reduce((acc, meal) => ({
@@ -197,6 +199,11 @@ useEffect(() => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     const numericFields = ["protein", "carbs", "fats", "fiber"];
+    setValidationErrors((prev) => ({
+      ...prev,
+      [name]: ""
+    }));
+
     setForm((prev) => ({
       ...prev,
       [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value,
@@ -219,10 +226,7 @@ useEffect(() => {
   const saveMeal = async (e) => {
     e.preventDefault();
 
-    if (!isValidForm()) {
-      showToastNotification("Please fill all fields with valid values.", "warning");
-      return;
-    }
+    if (!validateForm()) return;
 
     const newMeal = {
       mealType: form.mealType,
@@ -325,17 +329,38 @@ useEffect(() => {
     return recommendations;
   };
 
-  const isValidForm = () => {
-    const { foodName, calories, protein, carbs, fiber, fats, description } = form;
-    return (
-      foodName.trim() && foodName.length >= 3 && foodName.length <= 300 &&
-      calories >= 1 && calories <= 5000 &&
-      protein >= 1 && protein <= 500 &&
-      carbs >= 1 && carbs <= 1000 &&
-      fiber >= 1 && fiber <= 100 &&
-      fats >= 1 && fats <= 300 &&
-      description >= 500
-    );
+  const validateForm = () => {
+    const newErrors = {};
+    const { foodName, mealType, protein, carbs, fiber, fats } = form;
+
+    if (!foodName.trim()) {
+      newErrors.workoutName = "Food name is required.";
+    } else if(foodName.length < 3 || foodName.length > 100) {
+      newErrors.foodName = "Food name must be 3–100 characters.";
+    }
+
+    if (!mealType) {
+      newErrors.mealType = "Please select a meal type.";
+    }
+
+    if (protein < 1 || protein > 500) {
+      newErrors.protein = "Protein must be 1–500 grams.";
+    }
+
+    if (carbs < 1 || carbs > 1000) {
+      newErrors.carbs = "Carbs must be 1–1000 grams.";
+    }
+
+    if (fiber < 1 || fiber > 100) {
+      newErrors.fiber = "Fiber must be 1–100 grams.";
+    }
+    
+    if (fats < 1 || fats > 300) {
+      newErrors.fats = "Fats must be 1–300 grams.";
+    }
+
+    setValidationErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
@@ -387,7 +412,7 @@ useEffect(() => {
 
             <Row className="g-4 justify-content-center mt-3">
               <Col md={5}>
-                <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff",height: "792px", maxHeight: "792px", overflowY: "auto", overflowX: "hidden" }}>
+                <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff", height: "792px", maxHeight: "792px", overflowY: "auto", overflowX: "hidden" }}>
                   <Card.Body>
                     <h4 className="mb-5">🍽️ Meal Log</h4>
 
@@ -403,7 +428,9 @@ useEffect(() => {
                             minLength="3"
                             maxLength="100"
                             required
+                            isInvalid={!!validationErrors.foodName}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.foodName}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -412,6 +439,7 @@ useEffect(() => {
                             value={form.mealType}
                             onChange={handleChange}
                             required
+                            isInvalid={!!validationErrors.mealType}
                           >
                             <option value="" disabled>Select Meal Type</option>
                             {Object.keys(mealTypeColors).map((type) => (
@@ -420,6 +448,7 @@ useEffect(() => {
                               </option>
                             ))}
                           </Form.Select>
+                          <Form.Control.Feedback type="invalid">{validationErrors.mealType}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -442,7 +471,9 @@ useEffect(() => {
                             min="0"
                             max="500"
                             required
+                            isInvalid={!!validationErrors.protein}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.protein}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -455,7 +486,9 @@ useEffect(() => {
                             min="0"
                             max="1000"
                             required
+                            isInvalid={!!validationErrors.carbs}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.carbs}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -468,7 +501,9 @@ useEffect(() => {
                             min="0"
                             max="100"
                             required
+                            isInvalid={!!validationErrors.fiber}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.fiber}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -481,7 +516,9 @@ useEffect(() => {
                             min="0"
                             max="300"
                             required
+                            isInvalid={!!validationErrors.fats}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.fats}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={12}>

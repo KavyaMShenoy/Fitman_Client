@@ -13,7 +13,6 @@ import { Spinner } from "react-bootstrap";
 import { AuthContext } from "./contexts/AuthContext";
 
 const App = () => {
-
     const { loading } = useContext(AuthContext);
 
     useTokenExpiry();
@@ -30,10 +29,12 @@ const App = () => {
     }, []);
 
     if (loading) {
-        return (<div className="mt-5 d-flex justify-content-center align-items-center" style={{ padding: '70px 0' }}>
-            <Spinner animation="border" variant="light" />
-            <div className="m-2 text-light">Loading...</div>
-        </div>)
+        return (
+            <div className="vh-100 d-flex flex-column justify-content-center align-items-center bg-dark">
+                <Spinner animation="border" variant="light" />
+                <div className="mt-3 text-light">Loading...</div>
+            </div>
+        );
     }
 
     return (

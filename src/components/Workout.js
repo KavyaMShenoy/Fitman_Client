@@ -34,6 +34,8 @@ const Workout = () => {
     weights: ""
   });
 
+  const [validationErrors, setValidationErrors] = useState({});
+
   const [disbaleWorkoutTypes, setDisbaledWorkoutTypes] = useState([]);
 
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -96,7 +98,12 @@ const Workout = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const numericFields = ["duration", "sets", "reps", "weights"];
+    setForm((prev) => ({
+      ...prev,
+      [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value,
+    }));
+    setValidationErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const resetForm = () => {
@@ -111,25 +118,49 @@ const Workout = () => {
     });
   };
 
-  const isValidForm = () => {
-    const { workoutName, duration, caloriesBurned, sets, reps, weights } = form;
-    return (
-      workoutName.trim() && workoutName.length >= 3 && workoutName.length <= 300 &&
-      duration >= 1 && duration <= 300 &&
-      caloriesBurned >= 1 && caloriesBurned <= 5000 &&
-      sets >= 1 && sets <= 100 &&
-      reps >= 1 && reps <= 100 &&
-      weights >= 1 && weights <= 1000
-    );
+  const validateForm = () => {
+    const { workoutName, workoutType, duration, caloriesBurned, sets, reps, weights } = form;
+    const newErrors = {};
+
+    if (!workoutName.trim()) {
+      newErrors.workoutName = "Workout name is required.";
+    } else if (workoutName.length < 3 || workoutName.length > 300) {
+      newErrors.workoutName = "Workout name must be between 3 and 300 characters.";
+    }
+
+    if (!workoutType) {
+      newErrors.workoutType = "Please select a workout type.";
+    }
+
+    if (duration < 1 || duration > 300) {
+      newErrors.duration = "Duration must be between 1 and 300 minutes.";
+    }
+
+    if (caloriesBurned < 1 || caloriesBurned > 5000) {
+      newErrors.caloriesBurned = "Calories burned must be between 1 and 5000.";
+    }
+
+    if (sets < 1 || sets > 100) {
+      newErrors.sets = "Sets must be between 1 and 100.";
+    }
+
+    if (reps < 1 || reps > 100) {
+      newErrors.reps = "Reps must be between 1 and 100.";
+    }
+
+    if (weights < 1 || weights > 1000) {
+      newErrors.weights = "Weights must be between 1 and 1000 kg.";
+    }
+
+    setValidationErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
+
 
   const saveWorkout = async (e) => {
     e.preventDefault();
 
-    if (!isValidForm()) {
-      showToastNotification("Please fill all fields with valid values.", "warning");
-      return;
-    }
+    if (!validateForm()) return;
 
     const newWorkout = {
       ...form,
@@ -342,6 +373,7 @@ const Workout = () => {
                 <Card className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ height: "550px", maxHeight: "550px", overflowY: "auto", overflowX: "hidden", border: "1px solid #fff" }}>
                   <Card.Body>
                     <h4 className="mb-5">✅ Workout Log</h4>
+
                     <Form onSubmit={saveWorkout}>
                       <Row className="g-5">
                         <Col md={12}>
@@ -354,7 +386,9 @@ const Workout = () => {
                             minLength="3"
                             maxLength="100"
                             required
+                            isInvalid={!!validationErrors.workoutName}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.workoutName}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -363,6 +397,7 @@ const Workout = () => {
                             value={form.workoutType}
                             onChange={handleChange}
                             required
+                            isInvalid={!!validationErrors.workoutType}
                           >
                             <option value="" disabled>Select Workout Type</option>
                             {Object.keys(workoutTypeColors).map((type) => (
@@ -375,6 +410,7 @@ const Workout = () => {
                               </option>
                             ))}
                           </Form.Select>
+                          <Form.Control.Feedback type="invalid">{validationErrors.workoutType}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -387,7 +423,9 @@ const Workout = () => {
                             min="1"
                             max="300"
                             required
+                            isInvalid={!!validationErrors.duration}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.duration}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={4}>
@@ -398,9 +436,11 @@ const Workout = () => {
                             value={form.sets}
                             onChange={handleChange}
                             min="1"
-                            max="10"
+                            max="100"
                             required
+                            isInvalid={!!validationErrors.sets}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.sets}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={4}>
@@ -411,9 +451,11 @@ const Workout = () => {
                             value={form.reps}
                             onChange={handleChange}
                             min="1"
-                            max="30"
+                            max="100"
                             required
+                            isInvalid={!!validationErrors.reps}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.reps}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={4}>
@@ -424,9 +466,11 @@ const Workout = () => {
                             value={form.weights}
                             onChange={handleChange}
                             min="1"
-                            max="200"
+                            max="1000"
                             required
+                            isInvalid={!!validationErrors.weights}
                           />
+                          <Form.Control.Feedback type="invalid">{validationErrors.weights}</Form.Control.Feedback>
                         </Col>
 
                         <Col md={6}>
@@ -457,7 +501,6 @@ const Workout = () => {
                             {isSaving ? "Saving..." : "Save Workout"}
                           </Button>
                         </Col>
-
                       </Row>
                     </Form>
 
@@ -554,7 +597,7 @@ const Workout = () => {
 
             <Row className="g-4 justify-content-center mt-3">
               <Col md={10}>
-                <div className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{border: "1px solid #fff" }}>
+                <div className="shadow-lg rounded-3 p-4 bg-dark bg-opacity-75 text-light" style={{ border: "1px solid #fff" }}>
                   <WorkoutProgressReport />
                 </div>
               </Col>
